@@ -1,0 +1,728 @@
+---
+  title: "Study 2 - Quantitative Analysis"
+author: "Narallynne Araújo"
+output:
+  html_document:
+  df_print: paged
+theme: readable
+toc: yes
+code_folding: hide
+html_notebook:
+  fig_width: 7
+theme: readable
+toc: yes
+toc_float: yes
+pdf_document:
+  toc: yes
+---
+```{r setup, include=FALSE, message=FALSE, cache = FALSE, echo=TRUE, warning = FALSE}
+knitr::opts_chunk$set(tidy = FALSE,
+                      fig.width = 6,
+                      fig.height = 5)
+  knitr::opts_knit$set(root.dir = "/Users/narallynne.araujo.nufuturo/Desktop/doutorado/8571393 (1)/data (1)")
+
+  
+  #add file diretory
+options(repos = c(CRAN = "https://cloud.r-project.org/"))
+#install.packages("tidyverse", type="source")
+library(tidyverse)
+library(Hmisc)
+library(gridExtra)
+library(ggplot2)
+#library(ggpubr)
+library(broom)
+library(modelr)
+library(GGally)
+library(dplyr)
+library(here)
+```
+Our sample involved developers from software companies and projects in Brazil, who may or may not hold leadership positions in their teams. 
+The instrument used for data collection was the Multifactor Leadership Questionnaire (MLQ-6S), by Bass and Avolio (1992), which identifies leadership style. In addition, there are some questions based on situations in which the developer exercises some leadership function and identifies whether factors such as: experience, time on the team, team size and developer aptitude influence the leader to assign leadership activities to non-leaders. These questions were taken from a previous qualitative study that verified the differences in leadership views between leader and non-leader developers [(ARAUJO et al., 2024)](https://cbsoft.sbc.org.br/2024/sbes/pesquisa/artigos/?lang=pt). 
+
+Once the data had been collected through the questionnaire, the MLQ leadership factors were scored using the [Full Range Leadership Model - FRLM] (https://www.emerald.com/insight/content/doi/10.1108/00197850610646016/full/html?src=recsys&fullSc=1). Of the seven factors, four are related to transformational leadership (idealizing influence, inspiring motivation, intellectual stimulation, individualized consideration), two to transactional leadership (contingent reward, management by exception) and one to passive/avoidant leadership (laissez-faire) [(KIRKBRIDE, 2006)](https://www.emerald.com/insight/content/doi/10.1108/00197850610646016/full/ht).
+
+The score for each factor is determined by the sum of three items specified in the questionnaire (on a Likert scale):
+
+Idealized Influence (sum of the items 1, 8, & 15)
+
+Inspirational Motivation (sum of the items 2, 9, & 16)
+
+Intellectual Stimulation (sum of the items 3, 10, & 17)
+
+Individualized Consideration sum of the items 4, 11, & 18)
+
+Contingent Reward (sum of the items 5, 12, & 19)
+
+Management-by-exception (sum of the items 6, 13, & 20)
+
+Laissez-faire Leadership (sum of the items 7, 14, & 21)
+
+
+Score Range: High = 9-12
+
+Moderate = 5-8
+
+Low = 0-4
+
+
+For transformational and transactional indexes, they are calculated through average values of sum of their 4 and 2 factors, respectively. According to the original model, the highest of the three factors define the type of leadership as perceived by the participant. 
+
+Data analysis: 
+
+Calculated means were compared between leaders and non-leaders to compare with the previous study
+
+RQ1: What is the relationship between factors for attributing leadership activities and perceived leadership style? 
+Correlation between leadership styles (transformational, transactional and passive/avoidant - PAVL) and leadership factors
+
+RQ2: Are there differences between the factors for assigning leadership activities in agile activities for leaders and non-leaders? 
+
+Mann-Whitney test (non-parametric - we assume that the groups (leaders and non-leaders) are different)
+For those who assume statistical differences, we calculate the effect size
+We present boxplots to visualize the differences. 
+
+
+The data is divided into groups: leaders and non-leaders. 
+
+#------LEADERS-------
+### Cleaning and organizing data from the leaders group
+
+Excluding date/time columns and non-leaders' information
+
+```{r}
+setwd("~/Desktop/doutorado/8571393 (1)/data (1)") 
+dados_lideres <- read_csv("dados_lideres (1).csv"
+              , col_names = TRUE, locale = locale(encoding = "latin1"))
+
+
+dados_lideres <-dados_lideres[, -c(1, 8, 10:47)]
+
+head(dados_lideres)
+
+```
+
+```{r}
+#updating age (in years)
+dados_lideres[dados_lideres[,1] == "Entre 36 e 45 anos", 1] <- "36-45"
+dados_lideres[dados_lideres[,1] == "Entre 26 e 35 anos", 1] <- "26-35"
+dados_lideres[dados_lideres[,1] == "Entre 46 e 55 anos", 1] <- "46-55"
+dados_lideres[dados_lideres[,1] == "Entre 18 e 25 anos", 1] <- "18-25"
+
+#updating schoolar
+dados_lideres[dados_lideres[,3] == "Mestrado (acadÃªmico, profissional, MBA)", 3] <- "master degree"
+dados_lideres[dados_lideres[,3] == "Doutorado", 3] <- "phd"
+dados_lideres[dados_lideres[,3] == "Superior incompleto", 3] <- "undergraduate"
+dados_lideres[dados_lideres[,3] == "Superior completo", 3] <- "graduate"
+
+
+#updating time on the team (in years)
+dados_lideres[dados_lideres[,4] == "De 1 a 3 anos", 4] <- "1-3"
+dados_lideres[dados_lideres[,4] == "De 3 a 5 anos", 4] <- "3-5"
+dados_lideres[dados_lideres[,4] == "Menos de 1 ano", 4] <- "1-"
+dados_lideres[dados_lideres[,4] == "Mais de 5 anos", 4] <- "5+"
+
+#updating experience (in years)
+dados_lideres[dados_lideres[,5] == "Menos de 1 ano", 5] <- "1-"
+dados_lideres[dados_lideres[,5] == "De 1 a 3 anos", 5] <- "1-3"
+dados_lideres[dados_lideres[,5] == "De 3 a 6 anos", 5] <- "3-6"
+dados_lideres[dados_lideres[,5] == "De 6 a 9 anos", 5] <- "6-9"
+dados_lideres[dados_lideres[,5] == "De 9 a 12 anos", 5] <- "9-12"
+dados_lideres[dados_lideres[,5] == "De 12 a 15 anos", 5] <- "12-15"
+dados_lideres[dados_lideres[,5] == "Mais de 15 anos", 5] <- "15+"
+
+#updating team size (in number of members)
+dados_lideres[dados_lideres[,6] == "Entre 3 e 5 pessoas", 6] <- "3-5"
+dados_lideres[dados_lideres[,6] == "Entre 5 e 9 pessoas", 6] <- "5-9"
+dados_lideres[dados_lideres[,6] == "Mais de 9 pessoas", 6] <- "9+"
+
+#updating leaders' position 
+dados_lideres[dados_lideres[,7] == "LÃ­der tÃ©cnico", 7] <- "tech leader"
+dados_lideres[dados_lideres[,7] == "Coordenador(a)", 7] <- "coordinator"
+dados_lideres[dados_lideres[,7] == "Gerente de projetos", 7] <- "project manager"
+dados_lideres[dados_lideres[,7] == "Gerente de engenharia", 7] <- "eng manager"
+
+#translating gender
+dados_lideres[dados_lideres[,2] == "Mulher", 2] <- "woman"
+dados_lideres[dados_lideres[,2] == "Homem", 2] <- "man"
+
+
+#updating colnames with word`s accent 
+colnames(dados_lideres)[7] <- "lead-position"
+colnames(dados_lideres)[33] <- "liderar-reuniao-tempo-time"
+colnames(dados_lideres)[34] <- "liderar-reuniao-experiencia"
+colnames(dados_lideres)[36] <- "liderar-reuniao-aptidao"
+
+head(dados_lideres)
+```
+# Measuring Leaders' Leadership Style 
+MLQ leadership factors score
+
+## Transformational
+```{r}
+
+dados_lideres["i_influence_l"] <- dados_lideres$q1 + dados_lideres$q8 + dados_lideres$q15
+dados_lideres["i_motivation_l"] <- dados_lideres$q2 + dados_lideres$q9 + dados_lideres$q16
+dados_lideres["i_stimulation_l"] <- dados_lideres$q3 + dados_lideres$q10 + dados_lideres$q17
+dados_lideres["i_consideration_l"] <- dados_lideres$q4 + dados_lideres$q11 + dados_lideres$q18
+
+
+#checking the transformational leadership index
+dados_lideres["transformational_l"] <- (dados_lideres$i_influence_l + dados_lideres$i_motivation_l + dados_lideres$i_stimulation_l + dados_lideres$i_consideration_l)/4
+
+```
+## Transactional
+```{r}
+#calculating the transactional factors according to the MLQ
+
+#calculating transactional factors according to the MLQ
+dados_lideres["c_reward_l"] <- dados_lideres$q5 + dados_lideres$q12 + dados_lideres$q19
+dados_lideres["m_b_e_l"] <- dados_lideres$q6 + dados_lideres$q13 + dados_lideres$q20
+
+
+#checking the transactional leadership index
+dados_lideres["transactional_l"] <- (dados_lideres$c_reward_l + dados_lideres$m_b_e_l)/2
+
+head(dados_lideres)
+```
+
+
+
+## Passive/avoidant 
+```{r}
+#calculating passive/avoidant factor according to the MLQ
+dados_lideres["pavl_l"] <- dados_lideres$q7 + dados_lideres$q14 + dados_lideres$q21
+
+#checking the passive/avoidant leadership index
+dados_lideres["passive_avoidant_l"] <- (dados_lideres$pavl_l)
+
+
+## Leadership indexes (style) classification for leaders
+
+
+dados_lideres["classification_l"] <- ifelse(dados_lideres$transformational_l > dados_lideres$transactional_l & dados_lideres$transformational_l > dados_lideres$passive_avoidant_l,      #if true
+                                 dados_lideres$classification_l <- "transformational", 
+     #if false
+                          ifelse(dados_lideres$transactional_l > dados_lideres$transformational_l & dados_lideres$transactional_l > dados_lideres$passive_avoidant_l,
+     #if true
+                                dados_lideres$classification_l <- "transactional", 
+     #if false
+                          ifelse(dados_lideres$passive_avoidant_l > dados_lideres$transformational_l & dados_lideres$passive_avoidant_l > dados_lideres$transactional_l,
+     #if true
+                                 dados_lideres$classification_l <- "passive/avoidant",
+     #if false
+                          ifelse(dados_lideres$transformational_l == dados_lideres$transactional_l & dados_lideres$transactional_l < dados_lideres$passive_avoidant_l,
+     #if true
+                                 dados_lideres$classification_l <- "passive/avoidant",
+     #if false
+                          ifelse(dados_lideres$transformational_l == dados_lideres$passive_avoidant_l & dados_lideres$passive_avoidant_l < dados_lideres$transactional_l,
+     #if true
+                                 dados_lideres$classification_l <- "transactional",
+    #if false
+                          ifelse(dados_lideres$transactional_l == dados_lideres$passive_avoidant_l  & dados_lideres$passive_avoidant_l < dados_lideres$transformational_l,
+     #if true
+                                 dados_lideres$classification_l <- "transformational",
+
+                                 dados_lideres$classification_l <- "indeterminate"))))))
+                          
+  
+
+```
+
+###Classification plot 
+```{r}
+
+head(dados_lideres)
+
+paleta = c("#404E4D",
+           "#92DCE5",
+           "#938BA1",
+           "#2D3142",
+           "#F4743B")
+
+library(forcats)
+
+indices_lid_l <- dados_lideres %>%
+ # filter(classification_l != "NA") %>%
+  ggplot(aes(x = fct_reorder(classification_l, classification_l, .fun = function(x) length(x)))) + 
+  geom_bar(aes(y = ..count..), bins = 15, fill = paleta[1]) +
+  geom_text(aes(label = paste0(..count.., " (", scales::percent(..count.. / sum(..count..), accuracy = 0.1), ")"),
+                y = ..count..), 
+            stat = "count", 
+            vjust = -0.5, 
+            size = 4) + 
+  labs(title = "Leadership indexes classification") + 
+  theme(axis.title = element_text(size = 15), 
+        plot.title = element_text(size = 14),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+indices_lid_l
+#remove "NA" 
+#dados_lideres <- dados_lideres %>% filter(classification_l != "NA")
+
+```
+
+#------NON-LEADERS-------
+### Cleaning and organizing data from the NON-leaders group
+Excluding date/time columns and leaders' information
+
+
+```{r}
+setwd("~/Desktop/doutorado/8571393 (1)/data (1)")
+dados_nlideres <- read_csv("dados_nlideres (1).csv", col_names = TRUE, locale = locale(encoding = "latin1"))
+
+
+dados_nlideres <-dados_nlideres[-c(1, 8, 9, 48:84)]
+
+head(dados_nlideres)
+print(ls())
+
+
+```
+
+```{r}
+
+#updating age (in years)
+dados_nlideres[dados_nlideres[,1] == "Entre 36 e 45 anos", 1] <- "36-45"
+dados_nlideres[dados_nlideres[,1] == "Entre 26 e 35 anos", 1] <- "26-35"
+dados_nlideres[dados_nlideres[,1] == "Entre 46 e 55 anos", 1] <- "46-55"
+dados_nlideres[dados_nlideres[,1] == "Entre 18 e 25 anos", 1] <- "18-25"
+
+#updating schoolar
+dados_nlideres[dados_nlideres[,3] == "Mestrado (acadÃªmico, profissional, MBA)", 3] <- "master degree"
+dados_nlideres[dados_nlideres[,3] == "Doutorado", 3] <- "phd"
+dados_nlideres[dados_nlideres[,3] == "Superior incompleto", 3] <- "undergraduate"
+dados_nlideres[dados_nlideres[,3] == "Superior completo", 3] <- "graduate"
+
+
+#updating time on the team (in years)
+dados_nlideres[dados_nlideres[,4] == "De 1 a 3 anos", 4] <- "1-3"
+dados_nlideres[dados_nlideres[,4] == "De 3 a 5 anos", 4] <- "3-5"
+dados_nlideres[dados_nlideres[,4] == "Menos de 1 ano", 4] <- "1-"
+dados_nlideres[dados_nlideres[,4] == "Mais de 5 anos", 4] <- "5+"
+
+#updating experience (in years)
+dados_nlideres[dados_nlideres[,5] == "Menos de 1 ano", 5] <- "1-"
+dados_nlideres[dados_nlideres[,5] == "De 1 a 3 anos", 5] <- "1-3"
+dados_nlideres[dados_nlideres[,5] == "De 3 a 6 anos", 5] <- "3-6"
+dados_nlideres[dados_nlideres[,5] == "De 6 a 9 anos", 5] <- "6-9"
+dados_nlideres[dados_nlideres[,5] == "De 9 a 12 anos", 5] <- "9-12"
+dados_nlideres[dados_nlideres[,5] == "De 12 a 15 anos", 5] <- "12-15"
+dados_nlideres[dados_nlideres[,5] == "Mais de 15 anos", 5] <- "15+"
+
+#updating team size (in number of members)
+dados_nlideres[dados_nlideres[,6] == "Entre 3 e 5 pessoas", 6] <- "3-5"
+dados_nlideres[dados_nlideres[,6] == "Entre 5 e 9 pessoas", 6] <- "5-9"
+dados_nlideres[dados_nlideres[,6] == "Mais de 9 pessoas", 6] <- "9+"
+
+#updating leaders' position 
+dados_nlideres[dados_nlideres[,7] == "FunÃ§Ã£o de pesquisa e desenvolvimento", 7] <- "research and developer"
+dados_nlideres[dados_nlideres[,7] == "Desenvolvedor(a) (full-stack, back-end, front-end)", 7] <- "developer"
+dados_nlideres[dados_nlideres[,7] == "Estudante", 7] <- "student"
+dados_nlideres[dados_nlideres[,7] == "Desenvolvedor(a) (QA ou teste)", 7] <- "QA/tester"
+dados_nlideres[dados_nlideres[,7] == "Cientista de dados ou especialista em aprendizado de mÃ¡quina", 7] <- "data scientist or ml"
+dados_nlideres[dados_nlideres[,7] == "Desenvolvedor(a) (QA ou teste)", 7] <- "QA/tester"
+
+#translating gender
+dados_nlideres[dados_nlideres[,2] == "Mulher", 2] <- "woman"
+dados_nlideres[dados_nlideres[,2] == "Homem", 2] <- "man"
+
+#updating colnames with word`s accent 
+colnames(dados_nlideres)[7] <- "non-lead-position"
+colnames(dados_nlideres)[33] <- "liderar-reuniao-tempo-time"
+colnames(dados_nlideres)[34] <- "liderar-reuniao-experiencia"
+colnames(dados_nlideres)[36] <- "liderar-reuniao-aptidao"
+
+head(dados_nlideres)
+View(dados_lideres)
+
+```
+
+# Measuring Non-leaders' Leadership Style 
+MLQ leadership factors score
+
+## Transformational
+```{r}
+#calculating the transformational factors according to the MLQ
+
+dados_nlideres["i_influence_nl"] <- dados_nlideres$q1 + dados_nlideres$q8 + dados_nlideres$q15
+dados_nlideres["i_motivation_nl"] <- dados_nlideres$q2 + dados_nlideres$q9 + dados_nlideres$q16
+dados_nlideres["i_stimulation_nl"] <- dados_nlideres$q3 + dados_nlideres$q10 + dados_nlideres$q17
+dados_nlideres["i_consideration_nl"] <- dados_nlideres$q4 + dados_nlideres$q11 + dados_lideres$q18
+
+
+#checking the transformational leadership index
+dados_nlideres["transformational_nl"] <- (dados_nlideres$i_influence_nl + dados_nlideres$i_motivation_nl + dados_nlideres$i_stimulation_nl + dados_nlideres$i_consideration_nl)/4
+
+```
+## Transactional
+```{r}
+#calculating the transactional factors according to the MLQ
+
+#calculating transactional factors according to the MLQ
+dados_nlideres["c_reward_nl"] <- dados_nlideres$q5 + dados_nlideres$q12 + dados_nlideres$q19
+dados_nlideres["m_b_e_nl"] <- dados_nlideres$q6 + dados_nlideres$q13 + dados_nlideres$q20
+
+
+#checking the transactional leadership index
+dados_nlideres["transactional_nl"] <- (dados_nlideres$c_reward_nl + dados_nlideres$m_b_e_nl)/2
+```
+
+## Passive/avoidant
+```{r}
+#calculating passive/avoidant factor according to the MLQ
+dados_nlideres["pavl_nl"] <- dados_nlideres$q7 + dados_nlideres$q14 + dados_nlideres$q21
+
+#checking the passive/avoidant leadership index
+dados_nlideres["passive_avoidant_nl"] <- (dados_nlideres$pavl_nl)
+
+
+## Leadership indexes (style) classification
+
+
+dados_nlideres["classification_nl"] <- ifelse(dados_nlideres$transformational_nl > dados_nlideres$transactional_nl & dados_nlideres$transformational_nl > dados_nlideres$passive_avoidant_nl,      #if true
+                                 dados_nlideres$classification_nl <- "transformational", 
+     #if false
+                          ifelse(dados_nlideres$transactional_nl > dados_nlideres$transformational_nl & dados_nlideres$transactional_nl > dados_nlideres$passive_avoidant_nl,
+     #if true
+                                dados_nlideres$classification_nl <- "transactional", 
+     #if false
+                          ifelse(dados_nlideres$passive_avoidant_nl > dados_nlideres$transformational_nl & dados_nlideres$passive_avoidant_nl > dados_nlideres$transactional_nl,
+     #if true
+                                 dados_nlideres$classification_nl <- "passive/avoidant",
+     #if false
+                          ifelse(dados_nlideres$transformational_nl == dados_nlideres$transactional_nl & dados_nlideres$transactional_nl < dados_nlideres$passive_avoidant_nl,
+     #if true
+                                 dados_nlideres$classification_nl <- "passive/avoidant",
+     #if false
+                          ifelse(dados_nlideres$transformational_nl == dados_nlideres$passive_avoidant_nl & dados_nlideres$passive_avoidant_nl < dados_nlideres$transactional_nl,
+    #if true
+                                 dados_nlideres$classification_nl <- "transactional",
+     #if false
+                          ifelse(dados_nlideres$transactional_nl == dados_nlideres$passive_avoidant_nl  & dados_nlideres$passive_avoidant_nl < dados_nlideres$transformational_nl,
+    #if true
+                                 dados_nlideres$classification_nl <- "transformational",
+
+                                 dados_nlideres$classification_nl <- "indeterminate"))))))
+                          
+  
+```
+###Classification plot
+
+```{r}
+
+
+head(dados_nlideres)
+
+paleta = c("#404E4D",
+           "#92DCE5",
+           "#938BA1",
+           "#2D3142",
+           "#F4743B")
+
+library(forcats)
+
+indices_lid_l <- dados_lideres %>%
+  ggplot(aes(x = classification_l)) + 
+  geom_bar(aes(y = ..count..), fill = paleta[1]) +
+  #geom_text(aes(label = paste0(..count.., " (", scales::percent(..count.. / sum(..count..), accuracy = 0.1), ")"),
+               # y = ..count..), 
+            #stat = "count", 
+           # vjust = -0.5, 
+           # size = 4) + 
+  labs(title = "Leadership indexes classification") + 
+  theme(axis.title = element_text(size = 15), 
+        plot.title = element_text(size = 14),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+indices_lid_l
+
+ggsave("leadership_leaders.png", plot = indices_lid_l, width = 12, height = 8)
+```
+
+# Unifying leadership styles classification for two groups
+
+```{r}
+# Create the graphic combining two groups
+indices_combined <- dados_combined %>%
+  ggplot(aes(x = fct_reorder(classification, classification, .fun = function(x) length(x)), fill = group)) + 
+  geom_bar(aes(y = ..count..), position = "dodge", stat = "count") +
+  labs(title = "Leadership Index Classification (Leaders vs. Non-leaders)", 
+       x = "Classification", 
+       y = "Count") + 
+  theme(axis.title = element_text(size = 20), 
+        plot.title = element_text(size = 18),
+        axis.text.x = element_text(size = 20, angle = 0),
+        legend.text = element_text(size = 17),
+        legend.title = element_text(size = 18),
+        axis.text.y = element_text(size = 17)) +
+  scale_fill_manual(values = c(paleta[1], paleta[5]))  # Different colors for each group
+
+indices_combined
+
+
+
+# calculate the total for groups
+dados_totais <- dados_combined %>%
+  group_by(group, classification) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  group_by(group) %>%
+  mutate(total = sum(count),
+         percent = count / total * 100)
+
+View(dados_totais)
+
+# create the graphic with adjusted values
+indices_combined2 <- dados_totais %>%
+  ggplot(aes(x = fct_reorder(classification, count, .fun = sum), 
+             y = count, fill = group)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = paste0(count, " (", round(percent, 1), "%)")), 
+            position = position_dodge(width = 0.9), 
+            vjust = -0.5, size = 5) +
+  labs(title = "Leadership Index Classification (Leaders vs. Non-leaders)", 
+       x = "Classification", 
+       y = "Count") +
+  theme(axis.title = element_text(size = 20), 
+        plot.title = element_text(size = 18),
+        axis.text.x = element_text(size = 20, angle = 0),
+        legend.text = element_text(size = 17),
+        legend.title = element_text(size = 18),
+        axis.text.y = element_text(size = 17)) +
+  scale_fill_manual(values = c(paleta[1], paleta[5])) # Cores diferentes para cada grupo
+
+indices_combined2
+ggsave("indices_combined2.pdf", plot = indices_combined2, width = 12, height = 8)
+unique(dados_combinados$grupo)
+
+```
+
+
+# Answering the research questions
+## RQ1: Correlate leadership styles (leaders and non-leaders) with leadership attribution factors (experience, team time, team size, aptitude)
+
+```{r}
+
+#First we have to add up the constructs of each vignette - e.g.: function-leadership-experience + lead-meeting-experience + decision-making-experience + backlog-definition-experience. And so on for the other vignettes and constructs. 
+
+#we also have to separate by leadership style (transformational, transactional and PAVL)
+
+#LEADERS GROUP
+
+construtos_l <- data.frame(
+  experience = dados_lideres$`funcao-lider-experiencia` + dados_lideres$`liderar-reuniao-experiencia`+ dados_lideres$`tomada-decisao-experiencia` + dados_lideres$`definicao-backlog-experiencia`,
+  
+  team_tenure = dados_lideres$`funcao-lider-tempo-time` + dados_lideres$`liderar-reuniao-tempo-time` + dados_lideres$`tomada-decisao-tempo-time` + dados_lideres$`definicao-backlog-tempo-time`, 
+  
+  team_size = dados_lideres$`funcao-lider-tamanho` + dados_lideres$`liderar-reuniao-tamanho` + dados_lideres$`tomada-decisao-tamanho` + dados_lideres$`definicao-backlog-tamanho`, 
+  
+  aptitude = dados_lideres$`funcao-lider-aptidao` + dados_lideres$`liderar-reuniao-aptidao` + dados_lideres$`tomada-decisao-aptidao` + dados_lideres$`definicao-backlog-aptidao`
+)
+
+
+construtos_l_tfl <- construtos_l %>%
+  mutate(estilo_lid_tfl_l = dados_lideres$transformational_l)
+
+View(construtos_l_tfl)
+
+
+construtos_l_tsl <- construtos_l %>%
+  mutate(estilo_lid_tsl_l = dados_lideres$transactional_l)
+
+View(construtos_l_tsl)
+
+
+construtos_l_pavl <- construtos_l %>%
+  mutate(estilo_lid_pavl_l = dados_lideres$passive_avoidant_l)
+
+View(construtos_l_pavl)
+
+
+#NON-LEADERS GROUP
+construtos_nl <- data.frame(
+  experience = dados_nlideres$`funcao-lider-experiencia` + dados_nlideres$`liderar-reuniao-experiencia`+ dados_nlideres$`tomada-decisao-experiencia` + dados_nlideres$`definicao-backlog-experiencia`,
+  
+  team_tenure = dados_nlideres$`funcao-lider-tempo-time` + dados_nlideres$`liderar-reuniao-tempo-time` + dados_nlideres$`tomada-decisao-tempo-time` + dados_nlideres$`definicao-backlog-tempo-time`, 
+  
+  team_size = dados_nlideres$`funcao-lider-tamanho` + dados_nlideres$`liderar-reuniao-tamanho` + dados_nlideres$`tomada-decisao-tamanho` + dados_nlideres$`definicao-backlog-tamanho`, 
+  
+  aptitude = dados_nlideres$`funcao-lider-aptidao` + dados_nlideres$`liderar-reuniao-aptidao` + dados_nlideres$`tomada-decisao-aptidao` + dados_nlideres$`definicao-backlog-aptidao`)
+  
+ 
+
+construtos_nl_tfl <- construtos_nl %>%
+  mutate(estilo_lid_tfl_nl = dados_nlideres$transformational_nl)
+
+View(construtos_nl_tfl)
+
+
+
+
+construtos_nl_tsl <- construtos_nl %>%
+  mutate(estilo_lid_tsl_nl = dados_nlideres$transactional_nl)
+
+View(construtos_nl_tsl)
+
+
+
+
+
+construtos_nl_pavl <- construtos_nl %>%
+  mutate(estilo_lid_pavl_nl = dados_nlideres$passive_avoidant_nl)
+
+View(construtos_nl_pavl)
+
+```
+
+# Correlation Matrices by Leadership Style (leaders and non-leaders)
+```{r}
+#SEPARATED BY STYLE
+
+
+
+# Calculate the correlation matrix for the group of NON-LEADERS
+#transformational-matrix
+
+matriz_corr_nl_tfl <-  cor(construtos_nl_tfl[, -c(6)], use = "complete.obs", method = "spearman")
+print(matriz_corr_nl_tfl)
+
+#matrix-transactional
+matriz_corr_nl_tsl <- cor(construtos_nl_tsl[, -c(6)], use = "complete.obs", method = "spearman")
+print(matriz_corr_nl_tsl)
+
+
+#matrix-pavl
+matriz_corr_nl_pavl <- cor(construtos_nl_pavl[, -c(6)], use = "complete.obs", method = "spearman")
+print(matriz_corr_nl_pavl)
+
+#Another example with p-values
+# Excluding column 6 of constructs_nl_tfl for the analysis
+matriz_corr_pvalores <- rcorr(as.matrix(construtos_nl_tfl[, -c(6)]))
+print(matriz_corr_pvalores)
+
+matriz_corr_pvalores2 <- rcorr(as.matrix(construtos_nl_tsl[, -c(6)])) 
+print(matriz_corr_pvalores2)
+
+
+
+
+
+# ------ p values ------- leaders- transformational
+# Checking p.values to determine significance
+# Defining the variables
+
+experience <- construtos_l_pavl$experience
+team_tenure <- construtos_l_pavl$team_tenure
+team_size <- construtos_l_pavl$team_size
+aptitude <- construtos_l_pavl$aptitude
+style_l <- construtos_l_pavl$estilo_lid_pavl_l
+
+
+
+
+# Calculate the p-values for each pair of variables
+pvalores_l <- data.frame(
+  Variáveis = c("experience - style", 
+                "team_tenure - style", 
+                "team_size - style", 
+                "aptitude - style"),
+  
+  p_valor = c(
+    cor.test(experience, style_l)$p.value,
+    cor.test(team_tenure, style_l)$p.value,
+    cor.test(team_size, style_l)$p.value,
+    cor.test(aptitude, style_l)$p.value
+  )
+)
+
+# Show p-values
+
+print(pvalores_l)
+```
+
+##Chronbac`s alpha
+```{r}
+install.packages("ltm")
+library(psych)
+
+a <- dados_lideres[, -c(1:7, 45:55)]
+View(a)
+
+b <- dados_nlideres[, -c(1:7, 45:55)]
+View(b)
+
+ab <- rbind(a, b)
+View(ab)
+
+library(ltm)
+alpha_cronbach <- cronbach.alpha(ab)
+alpha_cronbach
+
+alfa_cronb <- psych::alpha(ab)
+alfa_cronb
+
+```
+
+##Demographic data
+```{r}
+#DEMOGGRAPHIC
+
+resultado_porcentagem <- dados_nlideres %>%
+  summarise(
+    idade = list(table(idade)),
+    genero = list(table(genero)),
+    escolaridade = list(table(escolaridade)),
+    tamanho_equipe = list(table(`tamanho-equipe`)),
+    experiencia = list(table(experiencia)),
+    cargo = list(table(`non-lead-position`)),
+    tempo_equipe = list(table(`tempo-equipe`)),
+  )
+
+# Transform tables in dataframes to % calulate
+resultado_final <- lapply(resultado_porcentagem, function(x) {
+  df <- as.data.frame(x)
+  colnames(df) <- c('opcao', 'quantidade')
+  df$porcentagem <- (df$quantidade / sum(df$quantidade)) * 100
+  return(df)
+})
+
+# View final results for each variable
+View(resultado_final)
+
+resultado_final_nleanders <- do.call(rbind, resultado_final)
+
+```
+
+```{r}
+write.csv(categories_nl, "/Users/narallynne.araujo.nufuturo/Desktop/categorias-nl.csv", row.names = FALSE)
+
+contagem_classificacoes <- table(dados_lideres$classification_l)
+
+# Show the results
+print(contagem_classificacoes)
+
+contagem_classificacoes_nl <- table(dados_nlideres$classification_nl)
+
+# Show the results
+print(contagem_classificacoes_nl)
+
+tabela_combinada <- cbind(leaders = as.integer(contagem_classificacoes),
+                           non_leaders = as.integer(contagem_classificacoes_nl))
+rownames(tabela_combinada) <- c("TFL", "TSL", "PAVL", "Indeterminate")
+colnames(tabela_combinada) <- c("L", "NL")
+
+# Show combined and adjusted table
+print(tabela_combinada)
+
+# Show combined table
+View(tabela_combinada)
+
+
+teste_fisher <- fisher.test(tabela_combinada)
+# show test results
+print(teste_fisher)
+
+
+
+```
+

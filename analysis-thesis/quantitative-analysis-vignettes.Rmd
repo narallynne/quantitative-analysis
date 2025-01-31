@@ -1,0 +1,1073 @@
+```{r setup, include=FALSE, message=FALSE, cache = FALSE, echo=TRUE, warning = FALSE}
+knitr::opts_chunk$set(tidy = FALSE,
+                      fig.width = 6,
+                      fig.height = 5)
+  knitr::opts_knit$set(root.dir = "/Users/narallynne.araujo.nufuturo/Desktop/doutorado/8571393 (1)/data (1)")
+#install.packages("tidyverse", type="source")
+  
+library(tidyverse)
+library(Hmisc)
+library(gridExtra)
+library(ggplot2)
+#library(ggpubr)
+library(broom)
+library(modelr)
+library(GGally)
+library(dplyr)
+library(here)
+library(tidyr)
+library(dplyr)
+library(forcats)
+install.packages("reshape2")
+install.packages("effsize")
+library(effsize)
+library(reshape2)
+```
+
+```{r setup, eval=FALSE}
+setwd("~/Desktop/doutorado/8571393 (1)/data (1)")
+
+vinhetas_l <- read_csv("dados_lideres (1).csv", col_names = TRUE, locale = locale(encoding = "latin1"))
+
+
+
+
+#vinhetas_l <-dados_lideres[, -c(1:68)]
+
+vinhetas_l <- dados_lideres[, -c(1:28, 45:55)]
+
+head(vinhetas_l)
+View(vinhetas_l)
+```
+
+```{r}
+setwd("~/Desktop/doutorado/8571393 (1)/data (1)")
+
+vinhetas_nl <- read_csv("dados_nlideres (1).csv", col_names = TRUE, locale = locale(encoding = "latin1"))
+
+
+vinhetas_nl <-dados_nlideres[, -c(1:28, 45:55)]
+
+head(vinhetas_nl)
+View(vinhetas_nl)
+```
+# Verificando a ocorrência das atribuições de liderança de acordo com os fatores identificados no estudo anterior
+## V1:Função de liderança atribuída 
+### lider
+```{r}
+classify_v1_l <- vinhetas_l[, c(1:4)]
+
+# Transformar o DataFrame para o formato longo
+dados_long <- classify_v1_l %>%
+  pivot_longer(cols = everything(), names_to = "Variavel", values_to = "Valor")
+
+# Calcular a frequência dos valores para cada variável
+frequencias <- dados_long %>%
+  group_by(Variavel, Valor) %>%
+  summarise(Frequencia = n(), .groups = 'drop')
+
+total <- sum(frequencias$Frequencia)
+frequencias <- frequencias %>%
+  mutate(Porcentagem = (Frequencia / total) * 100)
+
+
+# Criar o heatmap com ggplot2
+heatmap_lider <- ggplot(frequencias, aes(x=Variavel, y=as.factor(Valor), fill=Frequencia)) +
+  geom_tile() +
+  geom_text(aes(label=sprintf("%.1f%%", Porcentagem)), color="black") +
+  scale_fill_gradient(low="white", high="blue") +
+  theme_minimal() +
+  labs(title="Heatmap da Frequência dos Valores", x="Variável", y="Valor")
+# Exibir o heatmap
+print(heatmap_lider)
+
+
+# 
+# classify_v1_l <- vinhetas_l %>%
+#   pivot_longer(cols = c(`funcao-lider-tempo-time`, `funcao-lider-experiencia`, `funcao-lider-tamanho`, `funcao-lider-aptidao`), 
+#                names_to = "variavel", values_to = "valor") %>%
+#   filter(!is.na(valor))  # Remove valores NA
+# 
+# # Converte a coluna 'valor' para fator, se necessário
+# classify_v1_l$valor <- as.factor(classify_v1_l$valor)
+# 
+# # Calcula a frequência de cada valor para cada variável
+# frequencias <- classify_v1_l %>%
+#   group_by(variavel, valor) %>%
+#   summarise(frequencia = n()) %>%
+#   ungroup()
+# 
+# # Criação do heatmap
+# frequencias <- frequencias %>%
+#   mutate(perc = frequencia / sum(frequencia) * 100)  # Adiciona a coluna de percentagem
+# 
+# 
+# heatmap_lider <- ggplot(frequencias, aes(x = variavel, y = valor, fill = frequencia)) + 
+#   geom_tile() + 
+#   geom_text(aes(label = paste0(round(perc, 1), "%")), color = "black", size = 4) +  # Adiciona as porcentagens
+#   scale_fill_gradient(low = "white", high = "orange") + 
+#   scale_x_discrete(labels = c(
+#     "funcao-lider-aptidao" = "aptitude",
+#     "funcao-lider-experiencia" = "experience",
+#     "funcao-lider-tamanho" = "team size",
+#     "funcao-lider-tempo-time" = "team time"
+#   )) + 
+#   labs(title = "Frequencies of leadership attribution by leaders",
+#        x = "Variables",
+#        y = "Values",
+#        fill = "Frequency") +
+#   theme_minimal() +
+#   theme(axis.title = element_text(size = 15), 
+#         plot.title = element_text(size = 14),
+#         axis.text.x = element_text(size = 12),
+#         axis.text.y = element_text(size = 12))
+# 
+# 
+# heatmap_lider
+```
+### nao-lider
+```{r}
+classify_v1_nl <- vinhetas_nl %>%
+  pivot_longer(cols = c(`funcao-lider-tempo-time`, `funcao-lider-experiencia`, `funcao-lider-tamanho`, `funcao-lider-aptidao`), 
+               names_to = "variavel", values_to = "valor") %>%
+  filter(!is.na(valor))  # Remove valores NA
+
+# Converte a coluna 'valor' para fator, se necessário
+classify_v1_nl$valor <- as.factor(classify_v1_nl$valor)
+
+# Calcula a frequência de cada valor para cada variável
+frequencias <- classify_v1_nl %>%
+  group_by(variavel, valor) %>%
+  summarise(frequencia = n()) %>%
+  ungroup()
+
+# Criação do heatmap
+frequencias <- frequencias %>%
+  mutate(perc = frequencia / sum(frequencia) * 100)  # Adiciona a coluna de percentagem
+
+heatmap_nlider <- ggplot(frequencias, aes(x = variavel, y = valor, fill = frequencia)) + 
+  geom_tile() + 
+  geom_text(aes(label = paste0(round(perc, 1), "%")), color = "black", size = 4) +  # Adiciona as porcentagens
+  scale_fill_gradient(low = "white", high = "orange") + 
+  scale_x_discrete(labels = c(
+    "funcao-lider-aptidao" = "aptitude",
+    "funcao-lider-experiencia" = "experience",
+    "funcao-lider-tamanho" = "team size",
+    "funcao-lider-tempo-time" = "team time"
+  )) + 
+  labs(title = "Non-leaders' perceptions of leadership attribution",
+       x = "Variables",
+       y = "Values",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 15), 
+        plot.title = element_text(size = 14),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+
+heatmap_nlider
+```
+
+## V2: liderar reuniões
+### lider
+```{r}
+classify_v2_l <- vinhetas_l %>%
+  pivot_longer(cols = c(`liderar-reuniao-tempo-time`, `liderar-reuniao-experiencia`, `liderar-reuniao-tamanho`, `liderar-reuniao-aptidao`), 
+               names_to = "variavel", values_to = "valor") %>%
+  filter(!is.na(valor))  # Remove valores NA
+
+# Converte a coluna 'valor' para fator, se necessário
+classify_v2_l$valor <- as.factor(classify_v2_l$valor)
+
+# Calcula a frequência de cada valor para cada variável
+frequencias <- classify_v2_l %>%
+  group_by(variavel, valor) %>%
+  summarise(frequencia = n()) %>%
+  ungroup()
+
+# Criação do heatmap
+# Calcula a frequência total para calcular a porcentagem
+frequencias <- frequencias %>%
+  mutate(perc = frequencia / sum(frequencia) * 100)  # Adiciona a coluna de percentagem
+
+
+heatmap_lider_v2 <- ggplot(frequencias, aes(x = variavel, y = valor, fill = frequencia)) + 
+  geom_tile() + 
+    geom_text(aes(label = paste0(round(perc, 1), "%")), color = "black", size = 4) +  # Adiciona as porcentagens
+  scale_fill_gradient(low = "white", high = "blue") + 
+  scale_x_discrete(labels = c(
+    "liderar-reuniao-aptidao" = "aptitude",
+    "liderar-reuniao-experiencia" = "experience",
+    "liderar-reuniao-tamanho" = "team size",
+    "liderar-reuniao-tempo-time" = "team time"
+  )) + 
+  labs(title = "Attribution of leadership to lead meetings",
+       x = "Variables",
+       y = "Values",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 15), 
+        plot.title = element_text(size = 14),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+
+heatmap_lider_v2
+```
+### nao-lider
+```{r}
+classify_v2_nl <- vinhetas_nl %>%
+  pivot_longer(cols = c(`liderar-reuniao-tempo-time`, `liderar-reuniao-experiencia`, `liderar-reuniao-tamanho`, `liderar-reuniao-aptidao`), 
+               names_to = "variavel", values_to = "valor") %>%
+  filter(!is.na(valor))  # Remove valores NA
+
+# Converte a coluna 'valor' para fator, se necessário
+classify_v2_nl$valor <- as.factor(classify_v2_nl$valor)
+
+# Calcula a frequência de cada valor para cada variável
+frequencias <- classify_v2_nl %>%
+  group_by(variavel, valor) %>%
+  summarise(frequencia = n()) %>%
+  ungroup()
+
+# Criação do heatmap
+# Calcula a frequência total para calcular a porcentagem
+frequencias <- frequencias %>%
+  mutate(perc = frequencia / sum(frequencia) * 100)  # Adiciona a coluna de percentagem
+
+heatmap_nlider_v2 <- ggplot(frequencias, aes(x = variavel, y = valor, fill = frequencia)) + 
+  geom_tile() + 
+  geom_text(aes(label = paste0(round(perc, 1), "%")), color = "black", size = 4) +  # Adiciona as porcentagens
+  scale_fill_gradient(low = "white", high = "blue") + 
+  scale_x_discrete(labels = c(
+    "liderar-reuniao-aptidao" = "aptitude",
+    "liderar-reuniao-experiencia" = "experience",
+    "liderar-reuniao-tamanho" = "team size",
+    "liderar-reuniao-tempo-time" = "team time"
+  )) + 
+  labs(title = "Non-Leaders' perception of leadership attribution for leading meetings ",
+       x = "Variables",
+       y = "Values",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 15), 
+        plot.title = element_text(size = 14),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+
+heatmap_nlider_v2
+```
+
+## V3: tomada de decisão 
+### lider
+```{r}
+classify_v3_l <- vinhetas_l %>%
+  pivot_longer(cols = c(`tomada-decisao-tempo-time`, `tomada-decisao-experiencia`, `tomada-decisao-tamanho`, `tomada-decisao-aptidao`), 
+               names_to = "variavel", values_to = "valor") %>%
+  filter(!is.na(valor))  # Remove valores NA
+
+# Converte a coluna 'valor' para fator, se necessário
+classify_v3_l$valor <- as.factor(classify_v3_l$valor)
+
+# Calcula a frequência de cada valor para cada variável
+frequencias <- classify_v3_l %>%
+  group_by(variavel, valor) %>%
+  summarise(frequencia = n()) %>%
+  ungroup()
+
+# Criação do heatmap
+frequencias <- frequencias %>%
+  mutate(perc = frequencia / sum(frequencia) * 100)  # Adiciona a coluna de percentagem
+
+# Criação do heatmap com as porcentagens no centro de cada célula
+heatmap_lider_v3 <- ggplot(frequencias, aes(x = variavel, y = valor, fill = frequencia)) + 
+  geom_tile() + 
+  geom_text(aes(label = paste0(round(perc, 1), "%")), color = "black", size = 4) +  # Adiciona as porcentagens
+  scale_fill_gradient(low = "white", high = "purple") + 
+  scale_x_discrete(labels = c(
+    "tomada-decisao-aptidao" = "aptitude",
+    "tomada-decisao-experiencia" = "experience",
+    "tomada-decisao-tamanho" = "team size",
+    "tomada-decisao-tempo-time" = "team time"
+  )) + 
+  labs(title = "Attribution of leadership for decision-making",
+       x = "Variables",
+       y = "Values",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 15), 
+        plot.title = element_text(size = 14),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+
+heatmap_lider_v3
+```
+### nao-lider
+```{r}
+classify_v3_nl <- vinhetas_nl %>%
+  pivot_longer(cols = c(`tomada-decisao-tempo-time`, `tomada-decisao-experiencia`, `tomada-decisao-tamanho`, `tomada-decisao-aptidao`), 
+               names_to = "variavel", values_to = "valor") %>%
+  filter(!is.na(valor))  # Remove valores NA
+
+# Converte a coluna 'valor' para fator, se necessário
+classify_v3_nl$valor <- as.factor(classify_v3_nl$valor)
+
+# Calcula a frequência de cada valor para cada variável
+frequencias <- classify_v3_nl %>%
+  group_by(variavel, valor) %>%
+  summarise(frequencia = n()) %>%
+  ungroup()
+
+# Criação do heatmap
+# Calcula a frequência total para calcular a porcentagem
+frequencias <- frequencias %>%
+  mutate(perc = frequencia / sum(frequencia) * 100)  # Adiciona a coluna de percentagem
+
+# Criação do heatmap com as porcentagens no centro de cada célula
+heatmap_nlider_v3 <- ggplot(frequencias, aes(x = variavel, y = valor, fill = frequencia)) + 
+  geom_tile() + 
+  geom_text(aes(label = paste0(round(perc, 1), "%")), color = "black", size = 4) +  # Adiciona as porcentagens
+  scale_fill_gradient(low = "white", high = "purple") + 
+  scale_x_discrete(labels = c(
+    "tomada-decisao-aptidao" = "aptitude",
+    "tomada-decisao-experiencia" = "experience",
+    "tomada-decisao-tamanho" = "team size",
+    "tomada-decisao-tempo-time" = "team time"
+  )) + 
+  labs(title = "Non-leaders' perception of the attribution of leadership to decision-making",
+       x = "Variables",
+       y = "Values",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 15), 
+        plot.title = element_text(size = 14),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+
+heatmap_nlider_v3
+```
+
+
+## V4: definição de backlog
+### líder
+```{r}
+classify_v4_l <- vinhetas_l %>%
+  pivot_longer(cols = c(`definicao-backlog-tempo-time`, `definicao-backlog-experiencia`, `definicao-backlog-tamanho`, `definicao-backlog-aptidao`), 
+               names_to = "variavel", values_to = "valor") %>%
+  filter(!is.na(valor))  # Remove valores NA
+
+# Converte a coluna 'valor' para fator, se necessário
+classify_v4_l$valor <- as.factor(classify_v4_l$valor)
+
+# Calcula a frequência de cada valor para cada variável
+frequencias <- classify_v4_l %>%
+  group_by(variavel, valor) %>%
+  summarise(frequencia = n()) %>%
+  ungroup()
+
+# Criação do heatmap
+frequencias <- frequencias %>%
+  mutate(perc = frequencia / sum(frequencia) * 100)  # Adiciona a coluna de percentagem
+
+# Criação do heatmap com as porcentagens no centro de cada célula
+heatmap_lider_v4 <- ggplot(frequencias, aes(x = variavel, y = valor, fill = frequencia)) + 
+  geom_tile() + 
+  geom_text(aes(label = paste0(round(perc, 1), "%")), color = "black", size = 4) +  # Adiciona as porcentagens
+  scale_fill_gradient(low = "white", high = "navyblue") + 
+  scale_x_discrete(labels = c(
+    "definicao-backlog-aptidao" = "aptitude",
+    "definicao-backlog-experiencia" = "experience",
+    "definicao-backlog-tamanho" = "team size",
+    "definicao-backlog-tempo-time" = "team time"
+  )) + 
+  labs(title = "Attribution of leadership for backlog definition",
+       x = "Variables",
+       y = "Values",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 15), 
+        plot.title = element_text(size = 14),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+
+heatmap_lider_v4
+```
+
+```{r}
+classify_v4_nl <- vinhetas_nl %>%
+  pivot_longer(cols = c(`definicao-backlog-tempo-time`, `definicao-backlog-experiencia`, `definicao-backlog-tamanho`, `definicao-backlog-aptidao`), 
+               names_to = "variavel", values_to = "valor") %>%
+  filter(!is.na(valor))  # Remove valores NA
+
+# Converte a coluna 'valor' para fator, se necessário
+classify_v4_nl$valor <- as.factor(classify_v4_nl$valor)
+
+# Calcula a frequência de cada valor para cada variável
+frequencias <- classify_v4_nl %>%
+  group_by(variavel, valor) %>%
+  summarise(frequencia = n()) %>%
+  ungroup()
+
+# Criação do heatmap
+# Calcula a frequência total para calcular a porcentagem
+frequencias <- frequencias %>%
+  mutate(perc = frequencia / sum(frequencia) * 100)  # Adiciona a coluna de percentagem
+
+# Criação do heatmap com as porcentagens no centro de cada célula
+heatmap_nlider_v4 <- ggplot(frequencias, aes(x = variavel, y = valor, fill = frequencia)) + 
+  geom_tile() + 
+  geom_text(aes(label = paste0(round(perc, 1), "%")), color = "black", size = 4) +  # Adiciona as porcentagens
+  scale_fill_gradient(low = "white", high = "navyblue") + 
+  scale_x_discrete(labels = c(
+    "definicao-backlog-tempo-time" = "team time", 
+    "definicao-backlog-experiencia" = "experience", 
+    "definicao-backlog-tamanho" = "team size", 
+    "definicao-backlog-aptidao" = "aptitude" 
+    )) +
+  labs(title = "Non-leaders' perception of leadership attribution for backlog definition",
+       x = "Variables",
+       y = "Values",
+       fill = "Frequency") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 13), 
+        plot.title = element_text(size = 14, hjust = 0.5),
+         plot.margin = unit(c(1, 1, 2, 1), "cm"),
+        axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12))
+
+
+heatmap_nlider_v4
+```
+
+
+## Normality tests: Leaders' leadership role atribution
+### Leaders
+Null hypothesis (H₀): The data follow a normal distribution.
+Alternative hypothesis (H₁): The data do not follow a normal distribution.
+```{r}
+
+
+#Leaders - Leadership Attribution - time on the team
+ggplot(vinhetas_l, aes(x = `funcao-lider-tempo-time`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Leadership attribution by leaders: time on the team", 
+       x = "Time on the team", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`funcao-lider-tempo-time`)
+
+#Leaders - Leadership Attribution - experience
+ggplot(vinhetas_l, aes(x = `funcao-lider-experiencia`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Leadership attribution by leaders: experience", 
+       x = "Experience", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`funcao-lider-experiencia`)
+
+#Leaders - Leadership Attribution - team size
+ggplot(vinhetas_l, aes(x = `funcao-lider-tamanho`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Leadership attribution by leaders: team size", 
+       x = "Team size", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`funcao-lider-tamanho`)
+
+#Leaders - Leadership Attribution - aptitude
+ggplot(vinhetas_l, aes(x = `funcao-lider-aptidao`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Leadership attribution by leaders: aptitude", 
+       x = "Aptitude", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`funcao-lider-aptidao`)
+
+
+```
+
+## Normality tests: Leaders' decision-making atribution
+Null hypothesis (H₀): The data follow a normal distribution.
+Alternative hypothesis (H₁): The data do not follow a normal distribution.
+```{r}
+
+
+#Leaders - Decision-making atribution - time on the team
+ggplot(vinhetas_l, aes(x = `tomada-decisao-tempo-time`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Decision-making attribution by leaders: time on the team", 
+       x = "Time on the team", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`funcao-lider-tempo-time`)
+
+#Leaders - Decision-making atribution - experience
+ggplot(vinhetas_l, aes(x = `funcao-lider-experiencia`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Decision-making attribution by leaders: experience", 
+       x = "Experience", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`tomada-decisao-tempo-time`)
+
+#Leaders - Decision-making atribution - team size
+ggplot(vinhetas_l, aes(x = `tomada-decisao-tamanho`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Decision-making attribution by leaders: team size", 
+       x = "Team size", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`tomada-decisao-tamanho`)
+
+#Leaders - Decision-making atribution - aptitude
+ggplot(vinhetas_l, aes(x = `tomada-decisao-aptidao`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Decision-making attribution by leaders: aptitude", 
+       x = "Aptitude", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`tomada-decisao-aptidao`)
+
+
+```
+
+## Normality tests: Leaders' leading meetings atribution
+Null hypothesis (H₀): The data follow a normal distribution.
+Alternative hypothesis (H₁): The data do not follow a normal distribution.
+```{r}
+
+
+#Leaders - Lead agile meeting - time on the team
+ggplot(vinhetas_l, aes(x = `liderar-reuniao-tempo-time`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Lead agile meetings attribution by leaders: time on the team", 
+       x = "Time on the team", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`liderar-reuniao-tempo-time`)
+
+#Leaders - Lead agile meeting - experience
+ggplot(vinhetas_l, aes(x = `liderar-reuniao-experiencia`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Lead agile meetings attribution by leaders: experience", 
+       x = "Experience", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`liderar-reuniao-experiencia`)
+
+#Leaders - Lead agile meeting - team size
+ggplot(vinhetas_l, aes(x = `liderar-reuniao-tamanho`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Lead agile meetings attribution by leaders: team size", 
+       x = "Team size", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`liderar-reuniao-tamanho`)
+
+#Leaders - Lead agile meeting - aptitude
+ggplot(vinhetas_l, aes(x = `liderar-reuniao-aptidao`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Lead agile meetings attribution by leaders: aptitude", 
+       x = "Aptitude", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`liderar-reuniao-aptidao`)
+
+
+```
+
+## Normality tests: Leaders' backlog definition atribution
+Null hypothesis (H₀): The data follow a normal distribution.
+Alternative hypothesis (H₁): The data do not follow a normal distribution.
+```{r}
+#Leaders - Backlog definition - time on the team
+ggplot(vinhetas_l, aes(x = `definicao-backlog-tempo-time`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Backlog definition attribution by leaders: time on the team", 
+       x = "Time on the team", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`definicao-backlog-tempo-time`)
+
+#Leaders - Backlog definition - experience
+ggplot(vinhetas_l, aes(x = `definicao-backlog-experiencia`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Backlog definition attribution by leaders: experience", 
+       x = "Experience", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`definicao-backlog-experiencia`)
+
+#Leaders - Backlog definition - team size
+ggplot(vinhetas_l, aes(x = `definicao-backlog-tamanho`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Backlog definition attribution by leaders: team size", 
+       x = "Team size", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`definicao-backlog-tamanho`)
+
+#Leaders - Backlog definition - aptitude
+ggplot(vinhetas_l, aes(x = `definicao-backlog-aptidao`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Backlog definition attribution by leaders: aptitude", 
+       x = "Aptitude", 
+       y = "Density")
+
+shapiro.test(vinhetas_l$`definicao-backlog-aptidao`)
+
+
+```
+
+## Normality tests: Non-Leaders' perceptions on leadership role atribution
+### Non-Leaders
+Null hypothesis (H₀): The data follow a normal distribution.
+Alternative hypothesis (H₁): The data do not follow a normal distribution.
+```{r}
+
+
+#Non-Leaders' perception - Leadership Attribution - time on the team
+ggplot(vinhetas_nl, aes(x = `funcao-lider-tempo-time`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception of Leadership attribution by non-leaders: time on the team", 
+       x = "Time on the team", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`funcao-lider-tempo-time`)
+
+#Non-Leaders' perception - Leadership Attribution - experience
+ggplot(vinhetas_nl, aes(x = `funcao-lider-experiencia`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception of Leadership attribution by non-leaders: experience", 
+       x = "Experience", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`funcao-lider-experiencia`)
+
+#Non-Leaders' perception - Leadership Attribution - team size
+ggplot(vinhetas_nl, aes(x = `funcao-lider-tamanho`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception of Leadership attribution by non-leaders: team size", 
+       x = "Team size", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`funcao-lider-tamanho`)
+
+#Non-Leaders' perception- Leadership Attribution - aptitude
+ggplot(vinhetas_l, aes(x = `funcao-lider-aptidao`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception of Leadership attribution by non-leaders: aptitude", 
+       x = "Aptitude", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`funcao-lider-aptidao`)
+
+
+```
+
+## Normality tests: Non-Leaders' perceptions on leadership decision making atribution
+Null hypothesis (H₀): The data follow a normal distribution.
+Alternative hypothesis (H₁): The data do not follow a normal distribution.
+```{r}
+
+
+#Non-Leaders' perception - Decision-making atribution - time on the team
+ggplot(vinhetas_nl, aes(x = `tomada-decisao-tempo-time`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on Decision-making attribution by non-leaders: time on the team", 
+       x = "Time on the team", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`funcao-lider-tempo-time`)
+
+#Non-Leaders' perception - Decision-making atribution - experience
+ggplot(vinhetas_nl, aes(x = `funcao-lider-experiencia`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on Decision-making attribution by non-leaders: experience", 
+       x = "Experience", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`tomada-decisao-tempo-time`)
+
+#Non-Leaders' perception - Decision-making atribution - team size
+ggplot(vinhetas_nl, aes(x = `tomada-decisao-tamanho`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on Decision-making attribution by non-leaders: team size", 
+       x = "Team size", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`tomada-decisao-tamanho`)
+
+#Non-Leaders' perception - Decision-making atribution - aptitude
+ggplot(vinhetas_nl, aes(x = `tomada-decisao-aptidao`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on Decision-making attribution by non-leaders: aptitude", 
+       x = "Aptitude", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`tomada-decisao-aptidao`)
+
+
+```
+
+## Normality tests: Non-Leaders' perception on leading meetings atribution
+Null hypothesis (H₀): The data follow a normal distribution.
+Alternative hypothesis (H₁): The data do not follow a normal distribution.
+```{r}
+
+
+#Non-Leaders perception - Lead agile meeting - time on the team
+ggplot(vinhetas_nl, aes(x = `liderar-reuniao-tempo-time`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on Lead agile meetings attribution by non-leaders: time on the team", 
+       x = "Time on the team", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`liderar-reuniao-tempo-time`)
+
+#Non-Leaders perception - Lead agile meeting - experience
+ggplot(vinhetas_nl, aes(x = `liderar-reuniao-experiencia`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on Lead agile meetings attribution by non-leaders: experience", 
+       x = "Experience", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`liderar-reuniao-experiencia`)
+
+#Non-Leaders perception - Lead agile meeting - team size
+ggplot(vinhetas_nl, aes(x = `liderar-reuniao-tamanho`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on Lead agile meetings attribution by non-leaders: team size", 
+       x = "Team size", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`liderar-reuniao-tamanho`)
+
+#Non-Leaders perception - Lead agile meeting - aptitude
+ggplot(vinhetas_nl, aes(x = `liderar-reuniao-aptidao`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on Lead agile meetings attribution by non-leaders: aptitude", 
+       x = "Aptitude", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`liderar-reuniao-aptidao`)
+
+
+```
+
+## Normality tests: Non-Leaders' perception on backlog definition atribution
+Null hypothesis (H₀): The data follow a normal distribution.
+Alternative hypothesis (H₁): The data do not follow a normal distribution.
+```{r}
+#Non-Leaders perception - Backlog definition - time on the team
+ggplot(vinhetas_nl, aes(x = `definicao-backlog-tempo-time`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on backlog definition attribution by non-leaders: time on the team", 
+       x = "Time on the team", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`definicao-backlog-tempo-time`)
+
+#Non-Leaders perception - Backlog definition - experience
+ggplot(vinhetas_nl, aes(x = `definicao-backlog-experiencia`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on backlog definition attribution by non-leaders: experience", 
+       x = "Experience", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`definicao-backlog-experiencia`)
+
+#Non-Leaders perception - Backlog definition - team size
+ggplot(vinhetas_nl, aes(x = `definicao-backlog-tamanho`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on backlog definition attribution by non-leaders: team size", 
+       x = "Team size", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`definicao-backlog-tamanho`)
+
+#Non-Leaders perception - Backlog definition - aptitude
+ggplot(vinhetas_nl, aes(x = `definicao-backlog-aptidao`)) + 
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Perception on backlog definition attribution by non-leaders: aptitude", 
+       x = "Aptitude", 
+       y = "Density")
+
+shapiro.test(vinhetas_nl$`definicao-backlog-aptidao`)
+
+
+```
+# RQ2
+## Mann Whitney tests: Leaders and Non-Leaders (V1 - atribuição da função de lider)
+
+Null hypothesis (H₀): As duas distribuições são iguais, ou seja, não há diferença nas medianas.
+Alternative hypothesis (H₁): As distribuições são diferentes, ou seja, há uma diferença nas medianas.
+Se p < 0.05 - hipótese nula rejeitada, sugerindo que há uma diferença significativa entre os grupos.
+```{r}
+#tempo-time
+teste <- wilcox.test(vinhetas_l$`funcao-lider-tempo-time`, vinhetas_nl$`funcao-lider-tempo-time`, exact = FALSE)
+
+print(teste)
+
+#experiencia
+teste <- wilcox.test(vinhetas_l$`funcao-lider-experiencia`, vinhetas_nl$`funcao-lider-experiencia`, exact = FALSE)
+
+print(teste)
+
+#tamanho-time
+teste <- wilcox.test(vinhetas_l$`funcao-lider-tamanho` , vinhetas_nl$`funcao-lider-tamanho`, exact = FALSE)
+
+print(teste)
+
+#aptidão
+teste <- wilcox.test(vinhetas_l$`funcao-lider-aptidao`  , vinhetas_nl$`funcao-lider-aptidao`, exact = FALSE)
+
+print(teste)
+
+```
+## Mann Whitney tests: Leaders and Non-Leaders (V2 - liderar reuniao ágil)
+
+```{r}
+#tempo-time
+teste <- wilcox.test(vinhetas_l$`liderar-reuniao-tempo-time`, vinhetas_nl$`liderar-reuniao-tempo-time`, exact = FALSE)
+
+print(teste)
+
+#experiencia
+teste <- wilcox.test(vinhetas_l$`liderar-reuniao-experiencia` , vinhetas_nl$`liderar-reuniao-experiencia`, exact = FALSE)
+
+print(teste)
+
+#tamanho-time
+teste <- wilcox.test(vinhetas_l$`liderar-reuniao-tamanho` , vinhetas_nl$`liderar-reuniao-tamanho`, exact = FALSE)
+
+print(teste)
+
+#aptidão
+teste <- wilcox.test(vinhetas_l$`liderar-reuniao-aptidao`  , vinhetas_nl$`liderar-reuniao-aptidao`, exact = FALSE)
+
+print(teste)
+
+```
+## Mann Whitney tests: Leaders and Non-Leaders (V3- tomada de decisao)
+
+```{r}
+#tempo-time
+teste <- wilcox.test(vinhetas_l$`tomada-decisao-tempo-time` , vinhetas_nl$`tomada-decisao-tempo-time`, exact = FALSE)
+
+print(teste)
+
+#experiencia
+teste <- wilcox.test(vinhetas_l$`tomada-decisao-experiencia` , vinhetas_nl$`tomada-decisao-experiencia`, exact = FALSE)
+
+print(teste)
+
+#tamanho-time
+teste <- wilcox.test(vinhetas_l$`tomada-decisao-tamanho` , vinhetas_nl$`tomada-decisao-tamanho`, exact = FALSE)
+
+print(teste)
+
+#aptidão
+teste <- wilcox.test(vinhetas_l$`tomada-decisao-aptidao`  , vinhetas_nl$`tomada-decisao-aptidao`, exact = FALSE)
+
+print(teste)
+
+```
+
+## Mann Whitney tests: Leaders and Non-Leaders (V4- definir backlog)
+
+```{r}
+#tempo-time
+teste <- wilcox.test(vinhetas_l$`definicao-backlog-tempo-time` , vinhetas_nl$`definicao-backlog-tempo-time`, exact = FALSE)
+
+print(teste)
+
+#experiencia
+teste <- wilcox.test(vinhetas_l$`definicao-backlog-experiencia` , vinhetas_nl$`definicao-backlog-experiencia`, exact = FALSE)
+
+print(teste)
+
+#tamanho-time
+teste <- wilcox.test(vinhetas_l$`definicao-backlog-tamanho` , vinhetas_nl$`definicao-backlog-tamanho`, exact = FALSE)
+
+print(teste)
+
+#aptidão
+teste <- wilcox.test(vinhetas_l$`definicao-backlog-aptidao`  , vinhetas_nl$`definicao-backlog-aptidao`, exact = FALSE)
+
+print(teste)
+
+```
+#boxplot 
+```{r}
+vinhetas_l$grupo <- 'Leaders'
+vinhetas_nl$grupo <- 'Non-Leaders'
+
+# Combinando os dois DataFrames
+dados_combinados <- rbind(vinhetas_l, vinhetas_nl)
+View(dados_combinados)
+
+ggplot(dados_combinados, aes(x = grupo, y = `funcao-lider-aptidao`, fill = grupo)) +
+  geom_boxplot() +
+  labs(title = "Comparação da Aptidão: Líderes vs Não-Líderes",
+       x = "group",
+       y = "Aptidão") +
+  theme_minimal() +
+  scale_fill_manual(values = c("Líderes" = "#FF6347", "Não-Líderes" = "#4682B4"))  # Customizando cores
+
+
+
+# Renaming the columns to English
+dados_combinados <- dados_combinados %>%
+  rename(
+    `leader-function-team-tenure` = `funcao-lider-tempo-time`,
+    `leader-function-experience` = `funcao-lider-experiencia`,
+    `leader-function-team-size` = `funcao-lider-tamanho`,
+    `leader-function-aptitude` = `funcao-lider-aptidao`,
+    `lead-meeting-team-tenure` = `liderar-reuniao-tempo-time`,
+    `lead-meeting-experience` = `liderar-reuniao-experiencia`,
+    `lead-meeting-team-size` = `liderar-reuniao-tamanho`,
+    `lead-meeting-aptitude` = `liderar-reuniao-aptidao`,
+    `decision-making-team-tenure` = `tomada-decisao-tempo-time`,
+    `decision-making-experience` = `tomada-decisao-experiencia`,
+    `decision-making-team-size` = `tomada-decisao-tamanho`,
+    `decision-making-aptitude` = `tomada-decisao-aptidao`,
+    `backlog-definition-team-tenure` = `definicao-backlog-tempo-time`,
+    `backlog-definition-experience` = `definicao-backlog-experiencia`,
+    `backlog-definition-team-size` = `definicao-backlog-tamanho`,
+    `backlog-definition-aptitude` = `definicao-backlog-aptidao`
+  )
+
+# Reshaping the data for easier comparison
+long_data <- dados_combinados %>%
+  pivot_longer(
+    cols = c(
+      `leader-function-team-tenure`, `leader-function-experience`, `leader-function-team-size`, `leader-function-aptitude`, 
+      `lead-meeting-team-tenure`, `lead-meeting-experience`, `lead-meeting-team-size`, `lead-meeting-aptitude`, 
+      `decision-making-team-tenure`, `decision-making-experience`, `decision-making-team-size`, `decision-making-aptitude`, 
+      `backlog-definition-team-tenure`, `backlog-definition-experience`, `backlog-definition-team-size`, `backlog-definition-aptitude`
+    ), 
+    names_to = "variable", values_to = "value"
+  )
+
+# Creating boxplots with facets for each variable
+boxplot_graph <- ggplot(long_data, aes(x = grupo, y = value, fill = grupo)) +
+  geom_boxplot() +
+  facet_wrap(~ variable, scales = "free_y") +  # Each variable will have its own boxplot
+  labs(
+    x = "Scenarios and Factors", 
+    y = "Count"
+  ) +
+  theme_minimal() +
+  scale_fill_manual(values = c("Leaders" = "#FF6347", "Non-Leaders" = "#4682B4"))
+
+ggsave("boxplots_comparacao.png", plot = boxplot_graph, width = 12, height = 8)
+
+unique(dados_combinados$grupo)
+
+
+#write.csv(vinhetas_l, file = "/home/narallynne/Downloads/vinhetas_l.csv", row.names = FALSE)
+#write.csv(vinhetas_nl, file = "/home/narallynne/Downloads/vinhetas_l.csv", row.names = FALSE)
+
+```
+## Calculando o tamanho do efeito (Cohen`s D)
+```{r}
+#funcao-lider-tempo-time
+cohen_d_team_tenure <- cohen.d(vinhetas_l$`funcao-lider-tempo-time`, vinhetas_nl$`funcao-lider-tempo-time`, 
+                   pooled=TRUE, paired=FALSE)
+
+
+# Exibir o resultado
+cohen_d_team_tenure
+
+cohen_d_experience <- cohen.d(vinhetas_l$`funcao-lider-experiencia`, vinhetas_nl$`funcao-lider-experiencia`, 
+                   pooled=TRUE, paired=FALSE)
+
+cohen_d_experience
+
+```
+
+## estatisticas
+
+```{r}
+estatisticas <- dados_combinados %>%
+  group_by(grupo) %>%
+  summarise(
+    media = mean(`leader-function-aptitude`, na.rm = TRUE),
+    mediana = median(`leader-function-aptitude`, na.rm = TRUE)
+  )
+
+print(estatisticas)
+
+estatisticas_completas <- dados_combinados %>%
+  group_by(grupo) %>%
+  summarise(across(
+    starts_with("leader-function") | starts_with("lead-meeting") | starts_with("decision-making") | starts_with("backlog-definition"),
+    list(media = ~ mean(.x, na.rm = TRUE), mediana = ~ median(.x, na.rm = TRUE))
+  ))
+
+print(estatisticas_completas)
+write.csv(estatisticas_completas, "estatisticas_completas.csv", row.names = FALSE)
+
+#boxplot2
+boxplot_graph <- ggplot(long_data, aes(x = grupo, y = value, fill = grupo)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "point", shape = 4, size = 2, color = "black", aes(group = grupo)) + # Adiciona a média como ponto
+  stat_summary(fun = median, geom = "text", aes(label = round(..y.., 2)), vjust = -0.5, size = 2) + # Adiciona a mediana como texto
+  facet_wrap(~ variable, scales = "free_y") + # Divide os boxplots por variável
+  labs(
+    title = "Boxplots por Cenários e Fatores",
+    x = "Grupos",
+    y = "Valores"
+  ) +
+  theme_minimal() +
+  scale_fill_manual(values = c("Leaders" = "#FF6347", "Non-Leaders" = "#4682B4"))
+
+# Salvar o gráfico
+ggsave("boxplots_com_medias_e_medianas.pdf", plot = boxplot_graph, width = 12, height = 8)
+
+boxplot_graph <- ggplot(long_data, aes(x = grupo, y = value, fill = grupo)) +
+  geom_boxplot() +
+  stat_summary(fun = mean, geom = "crossbar", width = 0.2, fatten = 1, color = "yellow", aes(group = grupo)) + # Adiciona a média como ponto
+  stat_summary(fun = median, geom = "text", aes(label = round(..y.., 2)), vjust = -0.5,hjust = 3.5, size = 2) + # Adiciona a mediana como texto
+  facet_wrap(~ variable, scales = "free_y") + # Divide os boxplots por variável
+  labs(
+    title = "Boxplots - vignettes and factors",
+    x = "Groups",
+    y = "Values"
+  ) +
+  theme_minimal() +
+  scale_fill_manual(values = c("Leaders" = "#FF6347", "Non-Leaders" = "#4682B4"))
+
+ggsave("2boxplots_com_medias_e_medianas.pdf", plot = boxplot_graph, width = 12, height = 8)
+
+
+estatisticas_todas <- dados_combinados %>%
+  pivot_longer(
+    cols = starts_with("leader-function") | starts_with("lead-meeting") | 
+           starts_with("decision-making") | starts_with("backlog-definition"), 
+    names_to = "variavel", values_to = "valor"
+  ) %>%
+  group_by(grupo, variavel) %>%
+  summarise(
+    media = mean(valor, na.rm = TRUE),
+    mediana = median(valor, na.rm = TRUE),
+    desvio_padrao = sd(valor, na.rm = TRUE),
+    minimo = min(valor, na.rm = TRUE),
+    maximo = max(valor, na.rm = TRUE),
+    n = n(), # Contagem de observações
+    .groups = "drop" # Evita warnings sobre agrupamentos
+  )
+
+# Exibir os resultados
+print(estatisticas_todas)
+
+write.csv(estatisticas_todas, "estatisticas_vinhetas_fatores.csv", row.names = FALSE)
+
+```
+
